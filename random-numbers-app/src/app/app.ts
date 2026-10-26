@@ -55,6 +55,9 @@ export class App {
       this.generatedNumbers = numbers.map(String);
       this.averageValue = String(target);
       this.message = `Średnia: ${this.formatScaled(this.averageValue, decimalPlaces)}.`;
+      if (count > 1 && numbers.includes(target)) {
+        this.message += ' Przy tak małej maksymalnej różnicy co najmniej jedna liczba musi być równa średniej.';
+      }
       this.saveGeneration({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         createdAt: new Date().toISOString(),
@@ -101,15 +104,41 @@ export class App {
   }
 
   private buildAverageNumbers(target: bigint, count: number, maxSpread: bigint): bigint[] {
-    const maxOffset = maxSpread / 2n;
     const values: bigint[] = [];
 
-    if (count % 2 === 1) {
+    if (count === 1) {
+      values.push(target);
+      return values;
+    }
+
+    let maxPairOffset = maxSpread / 2n;
+    if (count % 2 === 1 && maxSpread >= 3n) {
+      const maxTripleOffset = maxSpread / 3n;
+      const firstOffset = this.randomBigInt(maxTripleOffset) + 1n;
+      const secondOffset = this.randomBigInt(maxTripleOffset) + 1n;
+      const lowestTripleOffset = -(firstOffset + secondOffset);
+      const direction = this.randomInt(2) === 0 ? 1n : -1n;
+      const tripleOffsets = [
+        firstOffset * direction,
+        secondOffset * direction,
+        lowestTripleOffset * direction,
+      ];
+      const lowestOffset = tripleOffsets.reduce((lowest, offset) => offset < lowest ? offset : lowest);
+      const highestOffset = tripleOffsets.reduce((highest, offset) => offset > highest ? offset : highest);
+
+      values.push(...tripleOffsets.map((offset) => target + offset));
+      maxPairOffset = [
+        maxPairOffset,
+        maxSpread - highestOffset,
+        maxSpread + lowestOffset,
+      ].reduce((smallest, offset) => offset < smallest ? offset : smallest);
+    } else if (count % 2 === 1) {
       values.push(target);
     }
 
-    for (let pair = 0; pair < Math.floor(count / 2); pair++) {
-      const offset = this.randomBigInt(maxOffset);
+    const pairCount = (count - values.length) / 2;
+    for (let pair = 0; pair < pairCount; pair++) {
+      const offset = this.randomBigInt(maxPairOffset);
       values.push(target - offset, target + offset);
     }
 

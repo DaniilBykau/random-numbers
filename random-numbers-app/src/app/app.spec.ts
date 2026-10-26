@@ -44,6 +44,38 @@ describe('App', () => {
     expect(actualSpread).toBeLessThanOrEqual(600n);
   });
 
+  it('should not include the target average as a value when the spread allows it', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.targetAverage = '10';
+    app.decimalPlaces = 0;
+    app.randomCount = 3;
+    app.maxSpread = '30';
+
+    app.generateNumbers();
+
+    const values = app.generatedNumbers.map(BigInt);
+    const actualTotal = values.reduce((sum, value) => sum + value, 0n);
+    const actualSpread = values.reduce((max, value) => (value > max ? value : max), values[0])
+      - values.reduce((min, value) => (value < min ? value : min), values[0]);
+    expect(values).toHaveLength(3);
+    expect(values).not.toContain(10n);
+    expect(actualTotal).toBe(30n);
+    expect(actualSpread).toBeLessThanOrEqual(30n);
+  });
+
+  it('should explain when a small spread makes the target average unavoidable', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.targetAverage = '10';
+    app.decimalPlaces = 0;
+    app.randomCount = 3;
+    app.maxSpread = '2';
+
+    app.generateNumbers();
+
+    expect(app.generatedNumbers.map(BigInt)).toContain(10n);
+    expect(app.message).toContain('co najmniej jedna liczba musi być równa średniej');
+  });
+
   it('should allow a zero maximum spread', () => {
     const app = TestBed.createComponent(App).componentInstance;
     app.targetAverage = '4,25';
