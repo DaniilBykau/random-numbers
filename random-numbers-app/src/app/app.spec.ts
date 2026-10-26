@@ -3,6 +3,7 @@ import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [App],
     })
@@ -28,27 +29,80 @@ describe('App', () => {
 
   it('should generate values with the target average and no more than the requested spread', () => {
     const app = TestBed.createComponent(App).componentInstance;
-    app.targetAverage = 10;
+    app.targetAverage = '10';
     app.randomCount = 8;
-    app.maxSpread = 6;
+    app.maxSpread = '6';
 
     app.generateNumbers();
 
-    const actualAverage = app.generatedNumbers.reduce((sum, value) => sum + value, 0) / app.generatedNumbers.length;
-    const actualSpread = Math.max(...app.generatedNumbers) - Math.min(...app.generatedNumbers);
+    const values = app.generatedNumbers.map(BigInt);
+    const actualTotal = values.reduce((sum, value) => sum + value, 0n);
+    const actualSpread = values.reduce((max, value) => (value > max ? value : max), values[0])
+      - values.reduce((min, value) => (value < min ? value : min), values[0]);
     expect(app.generatedNumbers).toHaveLength(8);
-    expect(actualAverage).toBeCloseTo(10, 10);
-    expect(actualSpread).toBeLessThanOrEqual(6);
+    expect(actualTotal).toBe(1000n * BigInt(values.length));
+    expect(actualSpread).toBeLessThanOrEqual(600n);
   });
 
   it('should allow a zero maximum spread', () => {
     const app = TestBed.createComponent(App).componentInstance;
-    app.targetAverage = 4.25;
+    app.targetAverage = '4,25';
     app.randomCount = 3;
-    app.maxSpread = 0;
+    app.maxSpread = '0';
 
     app.generateNumbers();
 
-    expect(app.generatedNumbers).toEqual([4.25, 4.25, 4.25]);
+    expect(app.generatedNumbers).toHaveLength(3);
+    expect(app.generatedNumbers.every((number) => number === '425')).toBe(true);
+    expect(app.formatScaled(app.generatedNumbers[0], 2)).toBe('4,25');
+  });
+
+  it('should preserve and display up to 20 decimal places', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.targetAverage = '0,12345678901234567890';
+    app.decimalPlaces = 20;
+    app.randomCount = 2;
+    app.maxSpread = '0';
+
+    app.generateNumbers();
+
+    expect(app.generatedNumbers).toEqual([
+      '12345678901234567890',
+      '12345678901234567890',
+    ]);
+    expect(app.formatScaled(app.averageValue, 20)).toBe('0,12345678901234567890');
+  });
+
+  it('should persist only the 20 most recent successful operations', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+
+    for (let operation = 0; operation < 21; operation++) {
+      app.targetAverage = String(operation);
+      app.generateNumbers();
+    }
+
+    expect(app.history).toHaveLength(20);
+    expect(app.formatScaled(app.history[0].targetAverage, 2)).toBe('20,00');
+    expect(app.formatScaled(app.history[19].targetAverage, 2)).toBe('1,00');
+    expect(JSON.parse(localStorage.getItem('random-numbers-history') ?? '[]')).toHaveLength(20);
+  });
+
+  it('should clear the operation history', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.generateNumbers();
+
+    app.clearHistory();
+
+    expect(app.history).toEqual([]);
+    expect(localStorage.getItem('random-numbers-history')).toBeNull();
+  });
+
+  it('should load saved operation history', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.generateNumbers();
+    const nextApp = TestBed.createComponent(App).componentInstance;
+
+    expect(nextApp.history).toHaveLength(1);
+    expect(nextApp.history[0].numbers).toEqual(app.generatedNumbers);
   });
 });

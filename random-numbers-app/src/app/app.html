@@ -9,12 +9,12 @@
       <div class="field-row">
         <label>
           <span>Wartość średniej</span>
-          <input type="number" name="targetAverage" [(ngModel)]="targetAverage" step="0.01" />
+          <input type="text" inputmode="decimal" name="targetAverage" [(ngModel)]="targetAverage" />
         </label>
 
         <label>
           <span>Liczba miejsc po przecinku</span>
-          <input type="number" name="decimalPlaces" [(ngModel)]="decimalPlaces" min="0" max="10" step="1" />
+          <input type="number" name="decimalPlaces" [(ngModel)]="decimalPlaces" min="0" max="20" step="1" />
         </label>
       </div>
 
@@ -26,7 +26,7 @@
 
         <label>
           <span>Maksymalna różnica między liczbami</span>
-          <input type="number" name="maxSpread" [(ngModel)]="maxSpread" min="0" step="0.01" />
+          <input type="text" inputmode="decimal" name="maxSpread" [(ngModel)]="maxSpread" />
           <small>Rzeczywista różnica może być mniejsza.</small>
         </label>
       </div>
@@ -38,12 +38,12 @@
       <div class="result-panel">
         <div class="result-header">
           <h2>Wygenerowane liczby</h2>
-          <span class="badge">Średnia: {{ formatNumber(averageValue, decimalPlaces) }}</span>
+          <span class="badge">Średnia: {{ formatScaled(averageValue, decimalPlaces) }}</span>
         </div>
 
         <ul class="numbers-list">
           @for (number of generatedNumbers; track number; let i = $index) {
-            <li>{{ i + 1 }}. {{ formatNumber(number, decimalPlaces) }}</li>
+            <li>{{ i + 1 }}. {{ formatScaled(number, decimalPlaces) }}</li>
           }
         </ul>
       </div>
@@ -52,5 +52,45 @@
     @if (message) {
       <p class="status-message">{{ message }}</p>
     }
+
+    <section class="history-panel" aria-labelledby="history-title">
+      <div class="result-header">
+        <div>
+          <h2 id="history-title">Ostatnie operacje</h2>
+          <p class="history-count">{{ history.length }} z 20 zapisanych operacji</p>
+        </div>
+        <button class="secondary-button" type="button" [disabled]="history.length === 0" (click)="clearHistory()">
+          Wyczyść historię
+        </button>
+      </div>
+
+      @if (historyMessage) {
+        <p class="history-message" role="status">{{ historyMessage }}</p>
+      }
+
+      @if (history.length) {
+        <div class="history-list">
+          @for (operation of history; track operation.id) {
+            <article class="history-item">
+              <div class="history-item-header">
+                <h3>{{ formatDate(operation.createdAt) }}</h3>
+                <span class="badge">Średnia: {{ formatScaled(operation.targetAverage, operation.decimalPlaces) }}</span>
+              </div>
+              <p>
+                {{ operation.randomCount }} liczb · maksymalna różnica:
+                {{ formatScaled(operation.maxSpread, operation.decimalPlaces) }}
+              </p>
+              <ul class="numbers-list">
+                @for (number of operation.numbers; track $index; let i = $index) {
+                  <li>{{ i + 1 }}. {{ formatScaled(number, operation.decimalPlaces) }}</li>
+                }
+              </ul>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="empty-history">Wygenerowane operacje pojawią się tutaj.</p>
+      }
+    </section>
   </section>
 </main>
