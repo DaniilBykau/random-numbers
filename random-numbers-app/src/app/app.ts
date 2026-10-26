@@ -104,44 +104,42 @@ export class App {
   }
 
   private buildAverageNumbers(target: bigint, count: number, maxSpread: bigint): bigint[] {
-    const values: bigint[] = [];
-
     if (count === 1) {
-      values.push(target);
-      return values;
+      return [target];
     }
 
-    let maxPairOffset = maxSpread / 2n;
-    if (count % 2 === 1 && maxSpread >= 3n) {
+    const offsets: bigint[] = [];
+    if (count % 2 === 1) {
       const maxTripleOffset = maxSpread / 3n;
-      const firstOffset = this.randomBigInt(maxTripleOffset) + 1n;
-      const secondOffset = this.randomBigInt(maxTripleOffset) + 1n;
-      const lowestTripleOffset = -(firstOffset + secondOffset);
-      const direction = this.randomInt(2) === 0 ? 1n : -1n;
-      const tripleOffsets = [
-        firstOffset * direction,
-        secondOffset * direction,
-        lowestTripleOffset * direction,
-      ];
-      const lowestOffset = tripleOffsets.reduce((lowest, offset) => offset < lowest ? offset : lowest);
-      const highestOffset = tripleOffsets.reduce((highest, offset) => offset > highest ? offset : highest);
-
-      values.push(...tripleOffsets.map((offset) => target + offset));
-      maxPairOffset = [
-        maxPairOffset,
-        maxSpread - highestOffset,
-        maxSpread + lowestOffset,
-      ].reduce((smallest, offset) => offset < smallest ? offset : smallest);
-    } else if (count % 2 === 1) {
-      values.push(target);
+      if (maxTripleOffset > 0n) {
+        const firstOffset = this.randomBigInt(maxTripleOffset - 1n) + 1n;
+        const secondOffset = this.randomBigInt(maxTripleOffset - 1n) + 1n;
+        const direction = this.randomInt(2) === 0 ? 1n : -1n;
+        offsets.push(
+          firstOffset * direction,
+          secondOffset * direction,
+          -(firstOffset + secondOffset) * direction,
+        );
+      } else {
+        offsets.push(0n);
+      }
     }
 
-    const pairCount = (count - values.length) / 2;
+    const lowestOffset = offsets.reduce((lowest, offset) => offset < lowest ? offset : lowest, 0n);
+    const highestOffset = offsets.reduce((highest, offset) => offset > highest ? offset : highest, 0n);
+    const maxPairOffset = [
+      maxSpread / 2n,
+      maxSpread + lowestOffset,
+      maxSpread - highestOffset,
+    ].reduce((smallest, offset) => offset < smallest ? offset : smallest);
+    const pairCount = (count - offsets.length) / 2;
+
     for (let pair = 0; pair < pairCount; pair++) {
-      const offset = this.randomBigInt(maxPairOffset);
-      values.push(target - offset, target + offset);
+      const offset = maxPairOffset > 0n ? this.randomBigInt(maxPairOffset - 1n) + 1n : 0n;
+      offsets.push(-offset, offset);
     }
 
+    const values = offsets.map((offset) => target + offset);
     for (let index = values.length - 1; index > 0; index--) {
       const swapIndex = this.randomInt(index + 1);
       [values[index], values[swapIndex]] = [values[swapIndex], values[index]];

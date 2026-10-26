@@ -63,6 +63,27 @@ describe('App', () => {
     expect(actualSpread).toBeLessThanOrEqual(30n);
   });
 
+  it('should never generate the target average for three values when the spread allows it', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    app.targetAverage = '10';
+    app.decimalPlaces = 2;
+    app.randomCount = 3;
+    app.maxSpread = '4';
+
+    for (let attempt = 0; attempt < 100; attempt++) {
+      app.generateNumbers();
+
+      const values = app.generatedNumbers.map(BigInt);
+      const actualTotal = values.reduce((sum, value) => sum + value, 0n);
+      const actualSpread = values.reduce((max, value) => (value > max ? value : max), values[0])
+        - values.reduce((min, value) => (value < min ? value : min), values[0]);
+      expect(values).toHaveLength(3);
+      expect(values).not.toContain(1000n);
+      expect(actualTotal).toBe(3000n);
+      expect(actualSpread).toBeLessThanOrEqual(400n);
+    }
+  });
+
   it('should explain when a small spread makes the target average unavoidable', () => {
     const app = TestBed.createComponent(App).componentInstance;
     app.targetAverage = '10';
