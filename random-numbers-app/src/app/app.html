@@ -1,53 +1,53 @@
 ﻿<main class="app-shell">
   <section class="generator-card">
     <div class="header-block">
-      <p class="eyebrow">Random generator</p>
-      <h1>Generate numbers with the needed average</h1>
+      <p class="eyebrow">Generator liczb losowych</p>
+      <h1>Generuj liczby o zadanej średniej</h1>
     </div>
 
     <form class="generator-form" (ngSubmit)="generateNumbers()">
       <div class="field-row">
         <label>
-          <span>Average value</span>
+          <span>Wartość średniej</span>
           <input type="number" name="targetAverage" [(ngModel)]="targetAverage" step="0.01" />
         </label>
 
         <label>
-          <span>Digits after decimal</span>
+          <span>Liczba miejsc po przecinku</span>
           <input type="number" name="decimalPlaces" [(ngModel)]="decimalPlaces" min="0" max="10" step="1" />
         </label>
       </div>
 
       <div class="field-row">
         <label>
-          <span>Number of random values</span>
+          <span>Liczba losowanych wartości</span>
           <input type="number" name="randomCount" [(ngModel)]="randomCount" min="1" max="1000" step="1" />
         </label>
 
         <label>
-          <span>Min range</span>
+          <span>Dolna granica zakresu</span>
           <input type="number" name="minRange" [(ngModel)]="minRange" step="0.01" />
         </label>
 
         <label>
-          <span>Max range</span>
+          <span>Górna granica zakresu</span>
           <input type="number" name="maxRange" [(ngModel)]="maxRange" step="0.01" />
         </label>
       </div>
 
-      <button type="submit">Generate</button>
+      <button type="submit">Generuj liczby</button>
     </form>
 
     @if (generatedNumbers.length) {
       <div class="result-panel">
         <div class="result-header">
-          <h2>Generated numbers</h2>
-          <span class="badge">Average: {{ averageValue.toFixed(decimalPlaces) }}</span>
+          <h2>Wygenerowane liczby</h2>
+          <span class="badge">Średnia: {{ formatNumber(averageValue, decimalPlaces) }}</span>
         </div>
 
         <ul class="numbers-list">
           @for (number of generatedNumbers; track number; let i = $index) {
-            <li>{{ i + 1 }}. {{ number.toFixed(decimalPlaces) }}</li>
+            <li>{{ i + 1 }}. {{ formatNumber(number, decimalPlaces) }}</li>
           }
         </ul>
       </div>

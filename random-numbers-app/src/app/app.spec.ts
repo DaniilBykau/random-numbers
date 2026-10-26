@@ -15,10 +15,12 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the Polish title and form labels', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, random-numbers-app');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Generuj liczby o zadanej średniej');
+    expect(compiled.textContent).toContain('Wartość średniej');
+    expect(compiled.textContent).toContain('Generuj liczby');
   });
 });

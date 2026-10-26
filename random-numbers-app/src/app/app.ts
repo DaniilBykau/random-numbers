@@ -25,25 +25,25 @@ export class App {
 
     try {
       const target = Number(this.targetAverage);
-      const decimalPlaces = this.normalizeInteger(this.decimalPlaces, 0, 10, 'Digits after decimal');
-      const count = this.normalizeInteger(this.randomCount, 1, 1000, 'Number of random values');
+      const decimalPlaces = this.normalizeInteger(this.decimalPlaces, 0, 10, 'Liczba miejsc po przecinku');
+      const count = this.normalizeInteger(this.randomCount, 1, 1000, 'Liczba losowanych wartości');
       const min = Number(this.minRange);
       const max = Number(this.maxRange);
 
       if (Number.isNaN(target) || Number.isNaN(min) || Number.isNaN(max)) {
-        throw new Error('Please fill in all numeric fields.');
+        throw new Error('Uzupełnij wszystkie pola wartościami liczbowymi.');
       }
 
       if (max <= min) {
-        throw new Error('The maximum range must be greater than the minimum range.');
+        throw new Error('Górna granica zakresu musi być większa od dolnej.');
       }
 
       const result = this.buildAverageNumbers(target, count, min, max, decimalPlaces);
       this.generatedNumbers = result;
       this.averageValue = result.reduce((sum, value) => sum + value, 0) / result.length;
-      this.message = `Average: ${this.formatNumber(this.averageValue, decimalPlaces)}.`;
+      this.message = `Średnia: ${this.formatNumber(this.averageValue, decimalPlaces)}.`;
     } catch (error) {
-      this.message = error instanceof Error ? error.message : 'Unable to generate valid numbers.';
+      this.message = error instanceof Error ? error.message : 'Nie udało się wygenerować poprawnych liczb.';
     }
   }
 
@@ -63,7 +63,7 @@ export class App {
     if (count === 1) {
       if (targetAverage < min || targetAverage > max) {
         throw new Error(
-          `The average ${this.formatNumber(targetAverage, decimalPlaces)} is outside the range [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
+          `Średnia ${this.formatNumber(targetAverage, decimalPlaces)} wykracza poza zakres [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
         );
       }
 
@@ -72,7 +72,7 @@ export class App {
 
     if (requiredTotal < minScaled * count || requiredTotal > maxScaled * count) {
       throw new Error(
-        `The average ${this.formatNumber(targetAverage, decimalPlaces)} is impossible for the range [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
+        `Nie można uzyskać średniej ${this.formatNumber(targetAverage, decimalPlaces)} w zakresie [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
       );
     }
 
@@ -93,14 +93,14 @@ export class App {
       }
     }
 
-    throw new Error('Could not generate a valid set of numbers for the selected parameters.');
+    throw new Error('Nie udało się wygenerować zestawu liczb dla wybranych parametrów.');
   }
 
   private normalizeInteger(value: number, min: number, max: number, label: string): number {
     const parsed = Number(value);
     const integerValue = Math.trunc(parsed);
     if (!Number.isFinite(integerValue) || integerValue < min || integerValue > max) {
-      throw new Error(`${label} must be a whole number between ${min} and ${max}.`);
+      throw new Error(`${label} musi być liczbą całkowitą z zakresu od ${min} do ${max}.`);
     }
 
     return integerValue;
@@ -110,12 +110,10 @@ export class App {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  private clampValue(value: number, min: number, max: number, decimalPlaces: number): number {
-    const clamped = Math.min(Math.max(value, min), max);
-    return Number(clamped.toFixed(decimalPlaces));
-  }
-
-  private formatNumber(value: number, decimalPlaces: number): string {
-    return Number(value).toFixed(decimalPlaces);
+  formatNumber(value: number, decimalPlaces: number): string {
+    return Number(value).toLocaleString('pl-PL', {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    });
   }
 }
