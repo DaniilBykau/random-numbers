@@ -1,6 +1,6 @@
 # Random numbers
 
-An Angular app that generates random numbers within a range whose average matches a target value.
+An Angular app that generates random numbers with a target average and a maximum allowed difference between the values. The actual difference can be smaller than the requested maximum.
 
 ## Run locally
 

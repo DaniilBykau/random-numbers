@@ -25,13 +25,9 @@
         </label>
 
         <label>
-          <span>Dolna granica zakresu</span>
-          <input type="number" name="minRange" [(ngModel)]="minRange" step="0.01" />
-        </label>
-
-        <label>
-          <span>Górna granica zakresu</span>
-          <input type="number" name="maxRange" [(ngModel)]="maxRange" step="0.01" />
+          <span>Maksymalna różnica między liczbami</span>
+          <input type="number" name="maxSpread" [(ngModel)]="maxSpread" min="0" step="0.01" />
+          <small>Rzeczywista różnica może być mniejsza.</small>
         </label>
       </div>
 

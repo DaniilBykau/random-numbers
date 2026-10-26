@@ -12,8 +12,7 @@ export class App {
   targetAverage = 10;
   decimalPlaces = 2;
   randomCount = 5;
-  minRange = 0;
-  maxRange = 20;
+  maxSpread = 20;
   generatedNumbers: number[] = [];
   averageValue = 0;
   message = '';
@@ -27,18 +26,17 @@ export class App {
       const target = Number(this.targetAverage);
       const decimalPlaces = this.normalizeInteger(this.decimalPlaces, 0, 10, 'Liczba miejsc po przecinku');
       const count = this.normalizeInteger(this.randomCount, 1, 1000, 'Liczba losowanych wartości');
-      const min = Number(this.minRange);
-      const max = Number(this.maxRange);
+      const maxSpread = Number(this.maxSpread);
 
-      if (Number.isNaN(target) || Number.isNaN(min) || Number.isNaN(max)) {
+      if (!Number.isFinite(target) || !Number.isFinite(maxSpread)) {
         throw new Error('Uzupełnij wszystkie pola wartościami liczbowymi.');
       }
 
-      if (max <= min) {
-        throw new Error('Górna granica zakresu musi być większa od dolnej.');
+      if (maxSpread < 0) {
+        throw new Error('Maksymalna różnica nie może być ujemna.');
       }
 
-      const result = this.buildAverageNumbers(target, count, min, max, decimalPlaces);
+      const result = this.buildAverageNumbers(target, count, maxSpread, decimalPlaces);
       this.generatedNumbers = result;
       this.averageValue = result.reduce((sum, value) => sum + value, 0) / result.length;
       this.message = `Średnia: ${this.formatNumber(this.averageValue, decimalPlaces)}.`;
@@ -50,50 +48,38 @@ export class App {
   private buildAverageNumbers(
     targetAverage: number,
     count: number,
-    min: number,
-    max: number,
+    maxSpread: number,
     decimalPlaces: number,
   ): number[] {
     const factor = 10 ** decimalPlaces;
-    const minScaled = Math.round(min * factor);
-    const maxScaled = Math.round(max * factor);
     const targetScaled = Math.round(targetAverage * factor);
-    const requiredTotal = targetScaled * count;
+    const spreadScaled = Math.floor(maxSpread * factor);
 
-    if (count === 1) {
-      if (targetAverage < min || targetAverage > max) {
-        throw new Error(
-          `Średnia ${this.formatNumber(targetAverage, decimalPlaces)} wykracza poza zakres [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
-        );
-      }
-
-      return [Number(targetAverage.toFixed(decimalPlaces))];
+    if (!Number.isSafeInteger(targetScaled) || !Number.isSafeInteger(spreadScaled)) {
+      throw new Error('Podane wartości są zbyt duże dla wybranej dokładności.');
     }
 
-    if (requiredTotal < minScaled * count || requiredTotal > maxScaled * count) {
-      throw new Error(
-        `Nie można uzyskać średniej ${this.formatNumber(targetAverage, decimalPlaces)} w zakresie [${this.formatNumber(min, decimalPlaces)}, ${this.formatNumber(max, decimalPlaces)}].`,
-      );
+    const maxOffset = Math.floor(spreadScaled / 2);
+    if (!Number.isSafeInteger(targetScaled - maxOffset) || !Number.isSafeInteger(targetScaled + maxOffset)) {
+      throw new Error('Podane wartości są zbyt duże dla wybranej dokładności.');
     }
 
-    for (let attempt = 0; attempt < 2000; attempt++) {
-      const valuesScaled: number[] = [];
-      let sumScaled = 0;
-
-      for (let index = 0; index < count - 1; index++) {
-        const valueScaled = this.randomInt(minScaled, maxScaled);
-        valuesScaled.push(valueScaled);
-        sumScaled += valueScaled;
-      }
-
-      const lastValueScaled = requiredTotal - sumScaled;
-      if (lastValueScaled >= minScaled && lastValueScaled <= maxScaled) {
-        valuesScaled.push(lastValueScaled);
-        return valuesScaled.map((value) => value / factor);
-      }
+    const valuesScaled: number[] = [];
+    if (count % 2 === 1) {
+      valuesScaled.push(targetScaled);
     }
 
-    throw new Error('Nie udało się wygenerować zestawu liczb dla wybranych parametrów.');
+    for (let pair = 0; pair < Math.floor(count / 2); pair++) {
+      const offset = this.randomInt(0, maxOffset);
+      valuesScaled.push(targetScaled - offset, targetScaled + offset);
+    }
+
+    for (let index = valuesScaled.length - 1; index > 0; index--) {
+      const swapIndex = this.randomInt(0, index);
+      [valuesScaled[index], valuesScaled[swapIndex]] = [valuesScaled[swapIndex], valuesScaled[index]];
+    }
+
+    return valuesScaled.map((value) => value / factor);
   }
 
   private normalizeInteger(value: number, min: number, max: number, label: string): number {
